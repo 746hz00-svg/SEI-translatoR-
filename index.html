@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEI® | Vocabulary Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0c; 
+            --card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1); 
+            --accent: #6366f1;
+            --accent-green: #10b981;
+            --text-main: #f8fafc; 
+            --text-muted: #94a3b8;
+        }
+
+        body { 
+            background: var(--bg); color: var(--text-main);
+            font-family: 'DM Mono', monospace; margin: 0; padding: 2rem;
+            min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+        }
+
+        .container { max-width: 800px; width: 100%; }
+
+        header { text-align: center; margin-bottom: 3rem; }
+        h1 { font-family: 'Syne'; font-size: 3.5rem; margin: 0; letter-spacing: -2px; }
+        .subtitle { color: var(--text-muted); font-family: 'Playfair Display'; font-style: italic; margin-top: 0.5rem; }
+        
+        .search-area { 
+            display: flex; gap: 1rem; background: var(--card);
+            padding: 0.5rem; border-radius: 16px; border: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+        input { 
+            flex: 1; background: transparent; border: none; padding: 1rem;
+            color: white; font-size: 1.1rem; outline: none; font-family: 'DM Mono', monospace;
+        }
+        button { 
+            background: var(--accent); color: white; border: none; padding: 0 2rem;
+            border-radius: 12px; cursor: pointer; font-family: 'Syne'; transition: 0.3s;
+            font-weight: 600; font-size: 1rem;
+        }
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        .result-card { 
+            background: var(--card); backdrop-filter: blur(10px);
+            padding: 2.5rem; border-radius: 24px; border: 1px solid var(--border);
+            margin-top: 2rem; display: none; animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; } }
+
+        .word-header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        #resWord { font-family: 'Playfair Display'; font-size: 2.5rem; margin: 0; color: #fff; }
+        #resPos { color: var(--accent); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        
+        #resDef { line-height: 1.6; font-size: 1.1rem; margin-bottom: 2rem; color: #e2e8f0; }
+
+        /* Real Incident Section */
+        .incident-box {
+            background: rgba(16, 185, 129, 0.05); /* Soft emerald tint */
+            border-left: 3px solid var(--accent-green);
+            padding: 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 2rem;
+        }
+        .incident-title {
+            color: var(--accent-green);
+            font-family: 'Syne';
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #resIncident {
+            font-family: 'Playfair Display';
+            font-style: italic;
+            color: #cbd5e1;
+            line-height: 1.5;
+            font-size: 1.1rem;
+        }
+
+        .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .lang-box { padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; background: rgba(0,0,0,0.2); }
+        .lang-box.bn { border-top: 2px solid #3b82f6; }
+        .lang-box.hi { border-top: 2px solid #f59e0b; }
+        .label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; font-family: 'Syne'; letter-spacing: 1px; }
+        .translated-text { font-size: 1.2rem; color: #fff; }
+
+        .loader { display: none; text-align: center; margin-top: 2rem; color: var(--text-muted); font-style: italic; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        footer { 
+            margin-top: auto; padding: 3rem; font-family: 'Playfair Display';
+            font-style: italic; opacity: 0.8; cursor: default; text-align: center;
+        }
+        .seiborlang { background: linear-gradient(90deg, #fff, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>SEI®</h1>
+        <div class="subtitle">Vocabulary Intelligence & Real-World Context</div>
+        <div class="search-area">
+            <input type="text" id="wordInput" placeholder="Enter a word (e.g., resilient, empathy)...">
+            <button onclick="searchWord()">Translate</button>
+        </div>
+        <div class="loader" id="loader">Consulting dictionaries...</div>
+    </header>
+
+    <div id="result" class="result-card">
+        <div class="word-header">
+            <h2 id="resWord">--</h2>
+            <span id="resPos">--</span>
+        </div>
+        
+        <div id="resDef">--</div>
+        
+        <div class="incident-box">
+            <div class="incident-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                Real-World Scenario
+            </div>
+            <div id="resIncident">--</div>
+        </div>
+        
+        <div class="lang-grid">
+            <div class="lang-box bn">
+                <div class="label">Bengali Meaning</div>
+                <div class="translated-text" id="resBn">--</div>
+            </div>
+            <div class="lang-box hi">
+                <div class="label">Hindi Meaning</div>
+                <div class="translated-text" id="resHi">--</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>Project by <span class="seiborlang">Seiborlang ®</span></footer>
+
+<script>
+    // Allow searching by pressing Enter key
+    document.getElementById('wordInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') searchWord();
+    });
+
+    async function searchWord() {
+        const word = document.getElementById('wordInput').value.trim();
+        if (!word) return;
+
+        const resDiv = document.getElementById('result');
+        const loader = document.getElementById('loader');
+        
+        resDiv.style.display = 'none';
+        loader.style.display = 'block';
+        
+        try {
+            // 1. Fetch Definition & Context
+            const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            if (!dictRes.ok) throw new Error("Word not found");
+            const dictData = await dictRes.json();
+            
+            // 2. Translate to Bengali
+            const bnRes = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|bn`);
+            const bnData = await bnRes.json();
+            
+            // 3. Translate to Hindi
+            const hiRes = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|hi`);
+            const hiData = await hiRes.json();
+
+            // 4. Extract Data
+            const wordData = dictData[0];
+            const meaning = wordData.meanings[0];
+            const definition = meaning.definitions[0].definition;
+            const pos = meaning.partOfSpeech;
+            
+            // Extract a real-world example from the API, or build a simple fallback scenario
+            let exampleText = meaning.definitions[0].example;
+            if (!exampleText) {
+                // Look for an example in alternative definitions
+                for (let def of meaning.definitions) {
+                    if (def.example) {
+                        exampleText = def.example;
+                        break;
+                    }
+                }
+            }
+
+            // 5. Populate UI
+            document.getElementById('resWord').innerText = wordData.word;
+            document.getElementById('resPos').innerText = pos;
+            document.getElementById('resDef').innerText = definition;
+            
+            // Populate the Real Incident / Context
+            const incidentEl = document.getElementById('resIncident');
+            if (exampleText) {
+                incidentEl.innerHTML = `Imagine someone saying: <strong>"${exampleText}"</strong>`;
+            } else {
+                // Simple fallback if no example exists
+                incidentEl.innerHTML = `You would use this word when talking about <strong>${definition.toLowerCase()}</strong>. For example: "The whole situation was a perfect example of ${wordData.word}."`;
+            }
+
+            document.getElementById('resBn').innerText = bnData.responseData.translatedText;
+            document.getElementById('resHi').innerText = hiData.responseData.translatedText;
+            
+            // Show results
+            loader.style.display = 'none';
+            resDiv.style.display = 'block';
+            
+        } catch (e) {
+            loader.style.display = 'none';
+            resDiv.style.display = 'block';
+            
+            // Error handling UI
+            document.getElementById('resWord').innerText = "Not Found";
+            document.getElementById('resPos').innerText = "--";
+            document.getElementById('resDef').innerText = "We couldn't find a standard dictionary definition for this word. Please check your spelling.";
+            document.getElementById('resIncident').innerText = "N/A";
+            document.getElementById('resBn').innerText = "--";
+            document.getElementById('resHi').innerText = "--";
+        }
+    }
+</script>
+</body>
+</html><footer>
+  <p>PROJECT BY <span class="credit-highlight">SEIBORLANG ®</span> · SEI VOCABULARY INTELLIGENCE SYSTEM</p>
+</footer>
